@@ -5,36 +5,55 @@
 #include "raylib.h"
 #include <stdio.h>
 
-int screenWidth = 0;
-int screenHeight = 0;
-Rectangle ball = {100, 100, 10, 10};
-int xx = 5, yy = 5;
-int left;
-int right;
-int top;
-int bottom;
+typedef struct
+{
+    int left, top, right, bottom;
+} lmt_t;
+
 
 // Paint court.
-void PaintCourt()
+void PaintCourt(const lmt_t lmt)
 {
-    left = 10;
-    right = screenWidth - 10;
-    top = 10;
-    bottom = screenHeight - 10;
-
     // Bounds
-    DrawRectangle(0, 0, screenWidth, top, GRAY);
-    DrawRectangle(0, bottom, screenWidth, screenHeight, GRAY);
-    DrawRectangle(0, 0, left, screenHeight, GRAY);
-    DrawRectangle(right, 0, bottom, screenHeight, GRAY);
+    DrawRectangle(0, 0, lmt.right, lmt.top, GRAY);
+    DrawRectangle(0, lmt.bottom, lmt.right, lmt.bottom, GRAY);
+    DrawRectangle(0, 0, lmt.left, lmt.bottom, GRAY);
+    DrawRectangle(lmt.right, 0, lmt.bottom, lmt.bottom + 10, GRAY);
 
     // Half court.
-    DrawRectangle((screenWidth/2) - 5, top, 10, bottom - 10, DARKGRAY);
+    DrawRectangle(((lmt.right +10)/2) - 5, lmt.top, 10, lmt.bottom - 10, GRAY);
+}
+
+// Manage ball movement.
+Rectangle AdvanceBall(const Rectangle pball, const lmt_t limit)
+{
+    static int xx = 5;
+    static int yy = 5;
+
+    if (pball.x < limit.left || pball.x > limit.right)
+        xx = -xx;
+
+    if (pball.y < limit.top || pball.y > limit.bottom)
+        yy = -yy;
+
+    return (Rectangle) {pball.x + xx, pball.y + yy, pball.width, pball.height} ;
+
+}
+
+// Just paint the ball.
+void DrawBall(const Rectangle pball)
+{
+    DrawRectangle(pball.x - pball.width/2 , pball.y - pball.height/2, pball.width, pball.height, WHITE);
 }
 
 // Start game.
 int main(void)
 {
+    int screenWidth = 0;
+    int screenHeight = 0;
+    char Mensaje[512];
+    Rectangle ball = {100, 100, 10, 10};
+
     InitWindow(0, 0, "Pong");
 
     HideWindow();
@@ -42,6 +61,12 @@ int main(void)
     screenHeight = GetMonitorHeight(0) / 2;
     SetWindowSize(screenWidth, screenHeight);
     SetWindowPosition(screenWidth/2, screenHeight/2);
+
+    lmt_t limits = {10, 10, screenWidth-10 , screenHeight-10};
+
+    sprintf(Mensaje, "%d %d %d %d", limits.left, limits.right, limits.top, limits.bottom);
+    TraceLog(LOG_INFO, Mensaje);
+
     UnhideWindow();
 
     SetTargetFPS(60);
@@ -52,16 +77,9 @@ int main(void)
 
             ClearBackground(BLACK);
 
-            PaintCourt();
-            if (!(ball.x > left && ball.x < right))
-                xx = -xx;
-
-            if (!(ball.y > top && ball.y < bottom))
-                yy = -yy;
-
-            ball.x += xx;
-            ball.y += yy;
-            DrawRectangle(ball.x-5, ball.y-5, 10, 10, WHITE);
+            PaintCourt(limits);
+            ball = AdvanceBall(ball, limits);
+            DrawBall (ball);
 
         EndDrawing();
     }
