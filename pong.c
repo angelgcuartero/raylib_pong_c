@@ -5,6 +5,7 @@
 #include "raylib.h"
 #include <stdio.h>
 
+// User-defined types.
 typedef struct
 {
     int left, top, right, bottom;
@@ -12,36 +13,43 @@ typedef struct
 typedef enum GameScreen { LOGO = 0, TITLE, GAMEPLAY, ENDING } GameScreen;
 typedef enum Direction { UP = 0, DOWN } Direction;
 
+// Global variables. They are global indeed.
+limit_t screen;
+limit_t border;
+
 // ----------------------------
 // Paint court limits and half.
 // ----------------------------
-void DrawCourt(const limit_t limit)
+void DrawCourt()
 {
     // Bounds
-    DrawRectangle(0, 0, limit.right, limit.top, GRAY);
-    DrawRectangle(0, limit.bottom, limit.right, limit.bottom, GRAY);
-    DrawRectangle(0, 0, limit.left, limit.bottom, GRAY);
-    DrawRectangle(limit.right, 0, limit.bottom, limit.bottom + 10, GRAY);
+    DrawRectangle(0, 0, border.right, border.top, GRAY);
+    DrawRectangle(0, border.bottom, border.right, border.bottom, GRAY);
+    DrawRectangle(0, 0, border.left, border.bottom, GRAY);
+    DrawRectangle(border.right, 0, border.bottom, border.bottom + 10, GRAY);
 
     // Half court.
-    DrawRectangle(((limit.right +10)/2) - 5, limit.top, 10, limit.bottom - 10, GRAY);
+    DrawRectangle(((border.right +10)/2) - 5, border.top, 10, border.bottom - 10, GRAY);
 }
 
 // ---------------------
 // Manage ball movement.
 // ---------------------
-Rectangle AdvanceBall(const Rectangle pBall, const limit_t pLimit)
+void AdvanceBall(Rectangle *pBall)
 {
     static int xx = 5;
     static int yy = 5;
 
-    if (pBall.x <= pLimit.left || pBall.x >= pLimit.right)
+    // Check and reverse direction.
+    if (pBall->x <= border.left || pBall->x >= border.right)
         xx = -xx;
 
-    if (pBall.y <= pLimit.top || pBall.y >= pLimit.bottom)
+    if (pBall->y <= border.top || pBall->y >= border.bottom)
         yy = -yy;
 
-    return (Rectangle) {pBall.x + xx, pBall.y + yy, pBall.width, pBall.height};
+    // Move ball.
+    pBall->x += xx;
+    pBall->y += yy;
 }
 
 // --------------------
@@ -63,17 +71,16 @@ void DrawRacket(const Rectangle pRacket)
 // ------------
 // Move racket.
 // ------------
-void  MoveRacket(Rectangle *pRacket, Direction pDir, const limit_t pLimit)
+void  MoveRacket(Rectangle *pRacket, Direction pDir)
 {
-    int step;
+    int step = (pDir == UP)? -5: 5;
+    pRacket->y += step;
 
-    step = (pDir == UP)? -5: 5;
+    if (pRacket->y < border.top)
+        pRacket->y = border.top ;
 
-    if (pRacket->y + step > pLimit.top)
-        pRacket->y += step;
-
-    if (pRacket->y + step < pLimit.bottom)
-        pRacket->y += step;
+    if (pRacket->y + pRacket->height > border.bottom)
+        pRacket->y = border.bottom - pRacket->height;
 
 }
 
@@ -86,9 +93,11 @@ int main(void)
     HideWindow(); // To avoid see window moving.
 
     // Calculate size, position and inner limits of window.
+    screen = (limit_t){0, 0, GetMonitorWidth(0)/2, GetMonitorHeight(0)/2};
+    border = (limit_t){10, 10, screen.right - 10 , screen.bottom - 10};
+
     SetWindowSize(GetMonitorWidth(0)/2, GetMonitorHeight(0)/2);
     SetWindowPosition(GetMonitorWidth(0)/4, GetMonitorHeight(0)/4);
-    limit_t limits = {10, 10, (GetMonitorWidth(0)/2) - 10 , (GetMonitorHeight(0)/2) - 10};
 
 
     UnhideWindow(); // Now display window in final position.
@@ -104,29 +113,29 @@ int main(void)
         if (WeArePlaying)
         {
             // Move elements.
-            ball = AdvanceBall(ball, limits);
+            AdvanceBall(&ball);
 
             // Check keys to move rackets. Q, A is left.
             if (IsKeyDown(KEY_Q))
             {
-                MoveRacket(&leftRacket, UP, limits);
+                MoveRacket(&leftRacket, UP);
             } else if (IsKeyDown(KEY_A))
             {
-                MoveRacket(&leftRacket, DOWN, limits);
+                MoveRacket(&leftRacket, DOWN);
             }
             if (IsKeyDown(KEY_I))
             {
-                MoveRacket(&rightRacket, UP, limits);
+                MoveRacket(&rightRacket, UP);
             } else if (IsKeyDown(KEY_J))
             {
-                MoveRacket(&rightRacket, DOWN, limits);
+                MoveRacket(&rightRacket, DOWN);
             }
 
 
             // Draw Scene.
             BeginDrawing();
             ClearBackground(BLACK);
-            DrawCourt(limits);
+            DrawCourt();
             DrawBall (ball);
             DrawRacket (leftRacket);
             DrawRacket (rightRacket);
