@@ -8,14 +8,14 @@
 // User-defined types.
 typedef struct
 {
-    int left, top, right, bottom;
-} limit_t;
-typedef enum GameScreen { LOGO = 0, TITLE, GAMEPLAY, ENDING } GameScreen;
+    int x, y, xx, yy;
+} int_rectangle_t;
+// typedef enum GameScreen { LOGO = 0, TITLE, GAMEPLAY, ENDING } GameScreen;
 typedef enum Direction { UP = 0, DOWN } Direction;
 
 // Global variables. They are global indeed.
-limit_t screen;
-limit_t border;
+int_rectangle_t screen;
+int_rectangle_t border;
 
 // ----------------------------
 // Paint court limits and half.
@@ -23,28 +23,26 @@ limit_t border;
 void DrawCourt()
 {
     // Bounds
-    DrawRectangle(0, 0, border.right, border.top, GRAY);
-    DrawRectangle(0, border.bottom, border.right, border.bottom, GRAY);
-    DrawRectangle(0, 0, border.left, border.bottom, GRAY);
-    DrawRectangle(border.right, 0, border.bottom, border.bottom + 10, GRAY);
+    DrawRectangle(screen.x, screen.y, screen.xx, screen.yy, GRAY);
+    DrawRectangle(border.x, border.y, border.xx, border.yy, BLACK);
 
     // Half court.
-    DrawRectangle(((border.right +10)/2) - 5, border.top, 10, border.bottom - 10, GRAY);
+    DrawRectangle((screen.xx/2) - 5, border.y, 10, border.yy, GRAY);
 }
 
 // ---------------------
 // Manage ball movement.
 // ---------------------
-void AdvanceBall(Rectangle *pBall)
+void AdvanceBall(int_rectangle_t *pBall)
 {
     static int xx = 5;
     static int yy = 5;
 
     // Check and reverse direction.
-    if (pBall->x <= border.left || pBall->x >= border.right)
+    if (pBall->x <= border.x || pBall->x >= border.xx)
         xx = -xx;
 
-    if (pBall->y <= border.top || pBall->y >= border.bottom)
+    if (pBall->y <= border.y || pBall->y >= border.yy)
         yy = -yy;
 
     // Move ball.
@@ -55,33 +53,37 @@ void AdvanceBall(Rectangle *pBall)
 // --------------------
 // Just paint the ball.
 // --------------------
-void DrawBall(const Rectangle pBall)
+void DrawBall(const int_rectangle_t pBall)
 {
-    DrawRectangle(pBall.x - pBall.width/2 , pBall.y - pBall.height/2, pBall.width, pBall.height, WHITE);
+    DrawRectangle(pBall.x, pBall.y, pBall.xx, pBall.yy, WHITE);
 }
 
 // -------------
 // Paint racket.
 // -------------
-void DrawRacket(const Rectangle pRacket)
+void DrawRacket(const int_rectangle_t pRacket)
 {
-    DrawRectangle(pRacket.x - pRacket.width/2 , pRacket.y - pRacket.height/2, pRacket.width, pRacket.height, WHITE);
+    DrawRectangle(pRacket.x, pRacket.y, pRacket.xx, pRacket.yy, WHITE);
 }
 
 // ------------
 // Move racket.
 // ------------
-void  MoveRacket(Rectangle *pRacket, Direction pDir)
+void  MoveRacket(int_rectangle_t *pRacket, Direction pDir)
 {
+
     int step = (pDir == UP)? -5: 5;
     pRacket->y += step;
 
-    if (pRacket->y < border.top)
-        pRacket->y = border.top ;
-
-    if (pRacket->y + pRacket->height > border.bottom)
-        pRacket->y = border.bottom - pRacket->height;
-
+    if ((pRacket->y <= border.y) && pDir == UP)
+    {
+        pRacket->y = border.y;
+    }
+    else
+    if ((pRacket->y >= border.yy - pRacket->yy) && pDir == DOWN)
+    {
+        pRacket->y = border.yy - pRacket->yy;
+    }
 }
 
 // -----------
@@ -93,19 +95,17 @@ int main(void)
     HideWindow(); // To avoid see window moving.
 
     // Calculate size, position and inner limits of window.
-    screen = (limit_t){0, 0, GetMonitorWidth(0)/2, GetMonitorHeight(0)/2};
-    border = (limit_t){10, 10, screen.right - 10 , screen.bottom - 10};
-
-    SetWindowSize(GetMonitorWidth(0)/2, GetMonitorHeight(0)/2);
-    SetWindowPosition(GetMonitorWidth(0)/4, GetMonitorHeight(0)/4);
-
+    screen = (int_rectangle_t){0, 0, GetMonitorWidth(0)/2, GetMonitorHeight(0)/2};
+    border = (int_rectangle_t){10, 10, screen.xx - 20 , screen.yy - 20};
+    SetWindowSize(screen.xx, screen.yy);
+    SetWindowPosition(screen.xx/2, screen.yy/2);
 
     UnhideWindow(); // Now display window in final position.
     SetTargetFPS(60);
 
-    Rectangle ball = {100, 100, 10, 10};
-    Rectangle leftRacket = {50, 100, 10, 50};
-    Rectangle rightRacket = {GetMonitorWidth(0)/2 - 50, GetMonitorHeight(0)/2 - 100, 10, 50};
+    int_rectangle_t ball = {100, 100, 10, 10};
+    int_rectangle_t leftRacket = {50, 100, 10, 60};
+    int_rectangle_t rightRacket = {screen.xx - 50, screen.yy - 100, 10, 60};
     bool WeArePlaying = true;
 
     while (!WindowShouldClose()) // Check ESC key.
@@ -130,7 +130,6 @@ int main(void)
             {
                 MoveRacket(&rightRacket, DOWN);
             }
-
 
             // Draw Scene.
             BeginDrawing();
