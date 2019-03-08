@@ -5,10 +5,9 @@
 #include "raylib.h"
 #include <stdio.h>
 
-typedef enum GameScreen { LOGO = 0, TITLE, GAMEPLAY, ENDING } GameScreen;
 int screenWidth = 0;
 int screenHeight = 0;
-Rectangle pelota = {100, 100, 10, 10};
+Rectangle ball = {100, 100, 10, 10};
 int xx = 5, yy = 5;
 int left;
 int right;
@@ -54,15 +53,15 @@ int main(void)
             ClearBackground(BLACK);
 
             PaintCourt();
-            if (!(pelota.x > left && pelota.x < right))
+            if (!(ball.x > left && ball.x < right))
                 xx = -xx;
 
-            if (!(pelota.y > top && pelota.y < bottom))
+            if (!(ball.y > top && ball.y < bottom))
                 yy = -yy;
 
-            pelota.x += xx;
-            pelota.y += yy;
-            DrawRectangle(pelota.x-5, pelota.y-5, 10, 10, WHITE);
+            ball.x += xx;
+            ball.y += yy;
+            DrawRectangle(ball.x-5, ball.y-5, 10, 10, WHITE);
 
         EndDrawing();
     }
