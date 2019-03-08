@@ -11,8 +11,10 @@ typedef struct
 } lmt_t;
 
 
-// Paint court.
-void PaintCourt(const lmt_t lmt)
+// ----------------------------
+// Paint court limits and half.
+// ----------------------------
+void DrawCourt(const lmt_t lmt)
 {
     // Bounds
     DrawRectangle(0, 0, lmt.right, lmt.top, GRAY);
@@ -24,62 +26,68 @@ void PaintCourt(const lmt_t lmt)
     DrawRectangle(((lmt.right +10)/2) - 5, lmt.top, 10, lmt.bottom - 10, GRAY);
 }
 
+// ---------------------
 // Manage ball movement.
+// ---------------------
 Rectangle AdvanceBall(const Rectangle pball, const lmt_t limit)
 {
     static int xx = 5;
     static int yy = 5;
 
-    if (pball.x < limit.left || pball.x > limit.right)
+    if (pball.x <= limit.left || pball.x >= limit.right)
         xx = -xx;
 
-    if (pball.y < limit.top || pball.y > limit.bottom)
+    if (pball.y <= limit.top || pball.y >= limit.bottom)
         yy = -yy;
 
-    return (Rectangle) {pball.x + xx, pball.y + yy, pball.width, pball.height} ;
-
+    return (Rectangle) {pball.x + xx, pball.y + yy, pball.width, pball.height};
 }
 
+// --------------------
 // Just paint the ball.
+// --------------------
 void DrawBall(const Rectangle pball)
 {
     DrawRectangle(pball.x - pball.width/2 , pball.y - pball.height/2, pball.width, pball.height, WHITE);
 }
 
+void DrawRacket(const Rectangle pracket)
+{
+    DrawRectangle(pracket.x - pracket.width/2 , pracket.y - pracket.height/2, pracket.width, pracket.height, WHITE);
+}
+
+// -----------
 // Start game.
+// -----------
 int main(void)
 {
-    int screenWidth = 0;
-    int screenHeight = 0;
-    char Mensaje[512];
-    Rectangle ball = {100, 100, 10, 10};
-
     InitWindow(0, 0, "Pong");
+    HideWindow(); // To avoid see window moving.
 
-    HideWindow();
-    screenWidth = GetMonitorWidth(0) / 2;
-    screenHeight = GetMonitorHeight(0) / 2;
-    SetWindowSize(screenWidth, screenHeight);
-    SetWindowPosition(screenWidth/2, screenHeight/2);
+    // Calculate size, position and inner limits of window.
+    SetWindowSize(GetMonitorWidth(0)/2, GetMonitorHeight(0)/2);
+    SetWindowPosition(GetMonitorWidth(0)/4, GetMonitorHeight(0)/4);
 
-    lmt_t limits = {10, 10, screenWidth-10 , screenHeight-10};
+    lmt_t limits = {10, 10, (GetMonitorWidth(0)/2) - 10 , (GetMonitorHeight(0)/2) - 10};
 
-    sprintf(Mensaje, "%d %d %d %d", limits.left, limits.right, limits.top, limits.bottom);
-    TraceLog(LOG_INFO, Mensaje);
-
-    UnhideWindow();
-
+    UnhideWindow(); // Now display window in final position.
     SetTargetFPS(60);
 
-    while (!WindowShouldClose())
+    Rectangle ball = {100, 100, 10, 10};
+    Rectangle leftRacket = {50, 100, 10, 50};
+    Rectangle rightRacket = {GetMonitorWidth(0)/2 - 50, GetMonitorHeight(0)/2 - 100, 10, 50};
+
+    while (!WindowShouldClose()) // Check ESC key.
     {
         BeginDrawing();
 
             ClearBackground(BLACK);
 
-            PaintCourt(limits);
+            DrawCourt(limits);
             ball = AdvanceBall(ball, limits);
             DrawBall (ball);
+            DrawRacket (leftRacket);
+            DrawRacket (rightRacket);
 
         EndDrawing();
     }
