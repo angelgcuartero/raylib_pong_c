@@ -1,90 +1,132 @@
 /*******************************************************************************************
 *   raylib - Pong
+*   Angel G. Cuartero. 2019-03-07.
 ********************************************************************************************/
 
 #include "raylib.h"
 #include <stdio.h>
 
+#define CALIBER 12
+
 // User-defined types.
-typedef struct
-{
-    int x, y, xx, yy;
-} int_rectangle_t;
-// typedef enum GameScreen { LOGO = 0, TITLE, GAMEPLAY, ENDING } GameScreen;
+typedef enum GameScreen { LOGO = 0, TITLE, GAMEPLAY, ENDING } GameScreen;
 typedef enum Direction { UP = 0, DOWN } Direction;
 
 // Global variables. They are global indeed.
-int_rectangle_t screen;
-int_rectangle_t border;
+Rectangle screen;
+Rectangle border;
+Rectangle top;
+Rectangle bottom;
+Rectangle ball;
+Rectangle leftRacket;
+Rectangle rightRacket;
+int rightScore;
+int leftScore;
 
+// Prototipes.
+void setupScore();
+void MoveBall(Rectangle *pBall);
+void MoveRacket(Rectangle *pRacket, Direction pDir);
+void ServeBall(Rectangle *pBall);
+void DrawCourt();
+void DrawBall(Rectangle *pBall);
+void DrawRacket(Rectangle *pRacket);
+void DrawScore();
+
+void setupScore() {
+    rightScore = 0;
+    leftScore = 0;
+}
+
+void MoveBall(Rectangle *pBall)
+{
+    static int xx = CALIBER/2;
+    static int yy = CALIBER/2;
+
+    // Check collision with rackets
+    if (CheckCollisionRecs(*pBall, leftRacket) || CheckCollisionRecs(*pBall, rightRacket))
+        xx = -xx;
+    else
+        if (pBall->y <= border.y || pBall->y >= border.height)
+            yy = -yy;
+    else
+    {
+        // Score.
+        if (pBall->x <= border.x)
+        {
+            ++rightScore;
+            ServeBall(pBall);
+
+        }
+        else if (pBall->x >= border.width)
+        {
+            ++leftScore;
+            ServeBall(pBall);
+        }
+
+    }
+
+    // Move pBall.
+    pBall->x += xx;
+    pBall->y += yy;
+}
+
+// -----------------------
+// Manage racket movement.
+// -----------------------
+void MoveRacket(Rectangle *pRacket, Direction pDir)
+{
+
+    int step = (pDir == UP)? -CALIBER/2: CALIBER/2;
+
+    if ((CheckCollisionRecs(top, *pRacket) && pDir == UP) ||
+        (CheckCollisionRecs(bottom, *pRacket) && pDir == DOWN))
+            return;
+    pRacket->y += step;
+}
+
+
+void ServeBall(Rectangle *pBall)
+{
+    pBall->x = border.width/2;
+    pBall->y = GetRandomValue(border.y + 10, border.height);
+}
 // ----------------------------
-// Paint court limits and half.
+// Draw court limits and half.
 // ----------------------------
 void DrawCourt()
 {
-    // Bounds
-    DrawRectangle(screen.x, screen.y, screen.xx, screen.yy, GRAY);
-    DrawRectangle(border.x, border.y, border.xx, border.yy, BLACK);
-
-    // Half court.
-    DrawRectangle((screen.xx/2) - 5, border.y, 10, border.yy, GRAY);
-}
-
-// ---------------------
-// Manage ball movement.
-// ---------------------
-void AdvanceBall(int_rectangle_t *pBall)
-{
-    static int xx = 5;
-    static int yy = 5;
-
-    // Check and reverse direction.
-    if (pBall->x <= border.x || pBall->x >= border.xx)
-        xx = -xx;
-
-    if (pBall->y <= border.y || pBall->y >= border.yy)
-        yy = -yy;
-
-    // Move ball.
-    pBall->x += xx;
-    pBall->y += yy;
+    DrawRectangle(screen.x, screen.y, screen.width, screen.height, GRAY);
+    DrawRectangle(screen.x, border.y, screen.width, border.height, BLACK);
+    DrawRectangle((screen.width/2) - 5, border.y, CALIBER, border.height, GRAY);
 }
 
 // --------------------
 // Just paint the ball.
 // --------------------
-void DrawBall(const int_rectangle_t pBall)
+void DrawBall(Rectangle *pBall)
 {
-    DrawRectangle(pBall.x, pBall.y, pBall.xx, pBall.yy, WHITE);
+    DrawRectangle(pBall->x, pBall->y, pBall->width, pBall->height, WHITE);
 }
 
 // -------------
-// Paint racket.
+// Draw racket.
 // -------------
-void DrawRacket(const int_rectangle_t pRacket)
+void DrawRacket(Rectangle *pRacket)
 {
-    DrawRectangle(pRacket.x, pRacket.y, pRacket.xx, pRacket.yy, WHITE);
+    DrawRectangle(pRacket->x, pRacket->y, pRacket->width, pRacket->height, WHITE);
 }
 
-// ------------
-// Move racket.
-// ------------
-void  MoveRacket(int_rectangle_t *pRacket, Direction pDir)
+// -----------
+// Draw score.
+// -----------
+void DrawScore()
 {
-
-    int step = (pDir == UP)? -5: 5;
-    pRacket->y += step;
-
-    if ((pRacket->y <= border.y) && pDir == UP)
-    {
-        pRacket->y = border.y;
-    }
-    else
-    if ((pRacket->y >= border.yy - pRacket->yy) && pDir == DOWN)
-    {
-        pRacket->y = border.yy - pRacket->yy;
-    }
+    int ancho = MeasureText("00", 60);
+    DrawText(FormatText("%02d", rightScore), (screen.width/2) - 50 - ancho, 50, 60, GRAY);
+    DrawText(FormatText("%02d", leftScore), (screen.width/2) + 50, 50, 60, GRAY);
 }
+
 
 // -----------
 // Start game.
@@ -95,49 +137,52 @@ int main(void)
     HideWindow(); // To avoid see window moving.
 
     // Calculate size, position and inner limits of window.
-    screen = (int_rectangle_t){0, 0, GetMonitorWidth(0)/2, GetMonitorHeight(0)/2};
-    border = (int_rectangle_t){10, 10, screen.xx - 20 , screen.yy - 20};
-    SetWindowSize(screen.xx, screen.yy);
-    SetWindowPosition(screen.xx/2, screen.yy/2);
+    screen = (Rectangle){0, 0, GetMonitorWidth(0)/2, GetMonitorHeight(0)/2};
+    border = (Rectangle){CALIBER, CALIBER, screen.width - (2*CALIBER) , screen.height - (2*CALIBER)};
+    top = (Rectangle) {screen.x, screen.y, border.width, border.y};
+    bottom = (Rectangle) {screen.x, border.height+CALIBER, screen.width, screen.y};
+    SetWindowSize(screen.width, screen.height);
+    SetWindowPosition(screen.width/2, screen.height/2);
 
     UnhideWindow(); // Now display window in final position.
     SetTargetFPS(60);
 
-    int_rectangle_t ball = {100, 100, 10, 10};
-    int_rectangle_t leftRacket = {50, 100, 10, 60};
-    int_rectangle_t rightRacket = {screen.xx - 50, screen.yy - 100, 10, 60};
+    // Initialize elements.
+    ball = (Rectangle) {5*CALIBER, border.height, CALIBER, CALIBER};
+    leftRacket = (Rectangle) {border.x + CALIBER, border.height/2, CALIBER, 5*CALIBER};
+    rightRacket = (Rectangle) {border.width - CALIBER, border.height/2, CALIBER, 5*CALIBER};
+    setupScore();
+
     bool WeArePlaying = true;
 
+    // Main loop.
     while (!WindowShouldClose()) // Check ESC key.
     {
         if (WeArePlaying)
         {
-            // Move elements.
-            AdvanceBall(&ball);
+            // Moves.
+            MoveBall(&ball);
 
-            // Check keys to move rackets. Q, A is left.
+            // Check racket keys.
             if (IsKeyDown(KEY_Q))
-            {
                 MoveRacket(&leftRacket, UP);
-            } else if (IsKeyDown(KEY_A))
-            {
+            else if (IsKeyDown(KEY_A))
                 MoveRacket(&leftRacket, DOWN);
-            }
-            if (IsKeyDown(KEY_I))
-            {
-                MoveRacket(&rightRacket, UP);
-            } else if (IsKeyDown(KEY_J))
-            {
-                MoveRacket(&rightRacket, DOWN);
-            }
 
-            // Draw Scene.
+            if (IsKeyDown(KEY_I))
+                MoveRacket(&rightRacket, UP);
+            else if (IsKeyDown(KEY_J))
+                MoveRacket(&rightRacket, DOWN);
+
+            // Renders.
             BeginDrawing();
-            ClearBackground(BLACK);
+            // No need to clear background, it renders the full court.
+            // ClearBackground(BLACK);
             DrawCourt();
-            DrawBall (ball);
-            DrawRacket (leftRacket);
-            DrawRacket (rightRacket);
+            DrawScore();
+            DrawBall(&ball);
+            DrawRacket(&leftRacket);
+            DrawRacket(&rightRacket);
             EndDrawing();
         }
         else
