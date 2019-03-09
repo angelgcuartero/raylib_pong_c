@@ -1,4 +1,4 @@
 # Raylib Pong
 **Pong game created with raylib**
 
-Just a test for checking old school game development with plain C and raylib.
+Just a test with plain C and raylib. Checking old school game development!
