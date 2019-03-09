@@ -9,25 +9,22 @@
 #define CALIBER 12
 
 // User-defined types.
-typedef enum GameScreen { LOGO = 0, TITLE, GAMEPLAY, ENDING } GameScreen;
+typedef enum GameScreen { TITLE = 0, GAMEPLAY, ENDING } GameScreen;
 typedef enum Direction { UP = 0, DOWN } Direction;
 
 // Global variables. They are global indeed.
 Rectangle screen, border, top, bottom, ball, leftRacket, rightRacket;
-int rightScore, leftScore, scoreWidth;
+int rightScore = 0, leftScore = 0, scoreWidth, winner;
 
 // Prototipes.
 void InitializeElements();
 void setupScore();
-void MoveBall(Rectangle *pBall);
+void MoveBall();
 void MoveRacket(Rectangle *pRacket, Direction pDir);
-void ServeBall(Rectangle *pBall);
-void DrawCourt();
-void DrawBall(Rectangle *pBall);
-void DrawRacket(Rectangle *pRacket);
-void DrawScore();
+void ServeBall();
 
 // Initialize window and primary game elements.
+// --------------------------------------------
 void InitializeElements()
 {
     InitWindow(0, 0, "Pong");
@@ -48,57 +45,47 @@ void InitializeElements()
     ball = (Rectangle) {5*CALIBER, border.height, CALIBER, CALIBER};
     leftRacket = (Rectangle) {border.x + CALIBER, border.height/2, CALIBER, 5*CALIBER};
     rightRacket = (Rectangle) {border.width - CALIBER, border.height/2, CALIBER, 5*CALIBER};
-    setupScore();
     scoreWidth = MeasureText("00", 60);
-}
-
-// Initialize Score
-// ----------------
-void setupScore() {
-    rightScore = 0;
-    leftScore = 0;
 }
 
 // Manage ball movement.
 // ---------------------
-void MoveBall(Rectangle *pBall)
+void MoveBall()
 {
     static int xx = CALIBER/2;
     static int yy = CALIBER/2;
 
-    // Check collision with rackets
-    if (CheckCollisionRecs(*pBall, leftRacket) || CheckCollisionRecs(*pBall, rightRacket))
+    // Check collision with rackets and ball has not surpassed rackets.
+    if ((CheckCollisionRecs(ball, leftRacket) && ball.x < leftRacket.x + leftRacket.width) ||
+        (CheckCollisionRecs(ball, rightRacket) && ball.x > rightRacket.x - rightRacket.width))
         xx = -xx;
     else
-        if (pBall->y <= border.y || pBall->y >= border.height)
+        if (ball.y <= border.y || ball.y >= border.height)
             yy = -yy;
     else
     {
         // Score.
-        if (pBall->x <= border.x)
+        if (ball.x <= border.x)
         {
             ++rightScore;
-            ServeBall(pBall);
-
+            ServeBall();
         }
-        else if (pBall->x >= border.width)
+        else if (ball.x >= border.width)
         {
             ++leftScore;
-            ServeBall(pBall);
+            ServeBall();
         }
-
     }
 
     // Move pBall.
-    pBall->x += xx;
-    pBall->y += yy;
+    ball.x += xx;
+    ball.y += yy;
 }
 
 // Manage racket movement.
 // -----------------------
 void MoveRacket(Rectangle *pRacket, Direction pDir)
 {
-
     int step = (pDir == UP)? -CALIBER/2: CALIBER/2;
 
     if ((CheckCollisionRecs(top, *pRacket) && pDir == UP) ||
@@ -109,85 +96,100 @@ void MoveRacket(Rectangle *pRacket, Direction pDir)
 
 // Serve ball after scoring.
 // -------------------------
-void ServeBall(Rectangle *pBall)
+void ServeBall()
 {
-    pBall->x = border.width/2;
-    pBall->y = GetRandomValue(border.y + 10, border.height);
-}
-
-// Draw court limits and half.
-// ---------------------------
-void DrawCourt()
-{
-    DrawRectangle(screen.x, screen.y, screen.width, screen.height, GRAY);
-    DrawRectangle(screen.x, border.y, screen.width, border.height, BLACK);
-    DrawRectangle((screen.width/2) - 5, border.y, CALIBER, border.height, GRAY);
-}
-
-// Just paint the ball.
-// --------------------
-void DrawBall(Rectangle *pBall)
-{
-    DrawRectangle(pBall->x, pBall->y, pBall->width, pBall->height, WHITE);
-}
-
-// Draw racket.
-// ------------
-void DrawRacket(Rectangle *pRacket)
-{
-    DrawRectangle(pRacket->x, pRacket->y, pRacket->width, pRacket->height, WHITE);
-}
-
-// Draw score.
-// -----------
-void DrawScore()
-{
-    DrawText(FormatText("%02d", rightScore), (screen.width/2) - 50 - scoreWidth, 50, 60, GRAY);
-    DrawText(FormatText("%02d", leftScore), (screen.width/2) + 50, 50, 60, GRAY);
+    ball.x = border.width/2;
+    ball.y = GetRandomValue(border.y + 10, border.height);
 }
 
 // Start game.
 // -----------
 int main(void)
 {
+    GameScreen currentScreen = TITLE;
     InitializeElements();
-
-    bool WeArePlaying = true;
 
     // Main loop.
     while (!WindowShouldClose()) // Check ESC key.
     {
-        if (WeArePlaying)
+        // Updating.
+        switch(currentScreen)
         {
-            // Moves.
-            MoveBall(&ball);
+            case TITLE:
+            {
+                if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
+                    currentScreen = GAMEPLAY;
+            } break;
+            case GAMEPLAY:
+            {
+                MoveBall(&ball);
 
-            // Check racket keys.
-            if (IsKeyDown(KEY_Q))
-                MoveRacket(&leftRacket, UP);
-            else if (IsKeyDown(KEY_A))
-                MoveRacket(&leftRacket, DOWN);
+                // Check racket keys.
+                if (IsKeyDown(KEY_Q))
+                    MoveRacket(&leftRacket, UP);
+                else if (IsKeyDown(KEY_A))
+                    MoveRacket(&leftRacket, DOWN);
 
-            if (IsKeyDown(KEY_I))
-                MoveRacket(&rightRacket, UP);
-            else if (IsKeyDown(KEY_J))
-                MoveRacket(&rightRacket, DOWN);
+                if (IsKeyDown(KEY_I))
+                    MoveRacket(&rightRacket, UP);
+                else if (IsKeyDown(KEY_J))
+                    MoveRacket(&rightRacket, DOWN);
 
-            // Renders.
-            BeginDrawing();
-            // No need to clear background, this renders the full court.
-            // ClearBackground(BLACK);
-            DrawCourt();
-            DrawScore();
-            DrawBall(&ball);
-            DrawRacket(&leftRacket);
-            DrawRacket(&rightRacket);
-            EndDrawing();
+                if ((leftScore == 10) || (rightScore == 10))
+                {
+                    winner = (leftScore == 10)? 1 : 2;
+                    rightScore = leftScore = 0; // Reset Score.
+                    currentScreen = ENDING;
+                }
+            } break;
+            case ENDING:
+            {
+                if (IsKeyPressed(KEY_ENTER) || IsGestureDetected(GESTURE_TAP))
+                    currentScreen = GAMEPLAY;
+            } break;
+            default: break;
         }
-        else
+
+        // Rendering.
+        BeginDrawing();
+        ClearBackground(RAYWHITE);
+        switch(currentScreen)
         {
-            // Get out of game.
-        }
+            case TITLE:
+            {
+                ClearBackground(BLACK);
+                DrawText("PONG", 120, 20, 120, GRAY);
+                DrawText("Based on Atari PONG", 120, 140, 60, GRAY);
+                DrawText("Programmed by Angel G. Cuartero", 120, 220, 20, GRAY);
+                DrawText("Press ENTER to PLAY", 120, 420, 20, GRAY);
+                DrawText("Press ESCAPE to QUIT", 120, 450, 20, GRAY);
+
+            } break;
+            case GAMEPLAY:
+            {
+                // Draw court.
+                DrawRectangle(screen.x, screen.y, screen.width, screen.height, GRAY);
+                DrawRectangle(screen.x, border.y, screen.width, border.height, BLACK);
+                DrawRectangle((screen.width/2) - 5, border.y, CALIBER, border.height, GRAY);
+                // Draw score.
+                DrawText(FormatText("%02d", leftScore), (screen.width/2) - 50 - scoreWidth, 50, 60, GRAY);
+                DrawText(FormatText("%02d", rightScore), (screen.width/2) + 50, 50, 60, GRAY);
+                // Draw ball.
+                DrawRectangle(ball.x, ball.y, ball.width, ball.height, WHITE);
+                // Draw rackets.
+                DrawRectangle(leftRacket.x, leftRacket.y, leftRacket.width, leftRacket.height, WHITE);
+                DrawRectangle(rightRacket.x, rightRacket.y, rightRacket.width, rightRacket.height, WHITE);
+            } break;
+            case ENDING:
+            {
+                ClearBackground(BLACK);
+                DrawText(FormatText("Winner is Player %d", winner), 120 , 50, 60, GRAY);
+                DrawText("Press ENTER to PLAY AGAIN", 120, 420, 20, GRAY);
+                DrawText("Press ESCAPE to QUIT", 120, 450, 20, GRAY);
+            } break;
+            default: break;
+            }
+        EndDrawing();
     }
 
     CloseWindow();
