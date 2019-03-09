@@ -13,17 +13,11 @@ typedef enum GameScreen { LOGO = 0, TITLE, GAMEPLAY, ENDING } GameScreen;
 typedef enum Direction { UP = 0, DOWN } Direction;
 
 // Global variables. They are global indeed.
-Rectangle screen;
-Rectangle border;
-Rectangle top;
-Rectangle bottom;
-Rectangle ball;
-Rectangle leftRacket;
-Rectangle rightRacket;
-int rightScore;
-int leftScore;
+Rectangle screen, border, top, bottom, ball, leftRacket, rightRacket;
+int rightScore, leftScore, scoreWidth;
 
 // Prototipes.
+void InitializeElements();
 void setupScore();
 void MoveBall(Rectangle *pBall);
 void MoveRacket(Rectangle *pRacket, Direction pDir);
@@ -33,11 +27,40 @@ void DrawBall(Rectangle *pBall);
 void DrawRacket(Rectangle *pRacket);
 void DrawScore();
 
+// Initialize window and primary game elements.
+void InitializeElements()
+{
+    InitWindow(0, 0, "Pong");
+    HideWindow(); // To avoid see window moving.
+
+    // Calculate size, position and inner limits of window.
+    screen = (Rectangle){0, 0, GetMonitorWidth(0)/2, GetMonitorHeight(0)/2};
+    border = (Rectangle){CALIBER, CALIBER, screen.width - (2*CALIBER) , screen.height - (2*CALIBER)};
+    top = (Rectangle) {screen.x, screen.y, border.width, border.y};
+    bottom = (Rectangle) {screen.x, border.height+CALIBER, screen.width, screen.y};
+    SetWindowSize(screen.width, screen.height);
+    SetWindowPosition(screen.width/2, screen.height/2);
+
+    UnhideWindow(); // Now display window in final position.
+    SetTargetFPS(60);
+
+    // Initialize elements.
+    ball = (Rectangle) {5*CALIBER, border.height, CALIBER, CALIBER};
+    leftRacket = (Rectangle) {border.x + CALIBER, border.height/2, CALIBER, 5*CALIBER};
+    rightRacket = (Rectangle) {border.width - CALIBER, border.height/2, CALIBER, 5*CALIBER};
+    setupScore();
+    scoreWidth = MeasureText("00", 60);
+}
+
+// Initialize Score
+// ----------------
 void setupScore() {
     rightScore = 0;
     leftScore = 0;
 }
 
+// Manage ball movement.
+// ---------------------
 void MoveBall(Rectangle *pBall)
 {
     static int xx = CALIBER/2;
@@ -71,7 +94,6 @@ void MoveBall(Rectangle *pBall)
     pBall->y += yy;
 }
 
-// -----------------------
 // Manage racket movement.
 // -----------------------
 void MoveRacket(Rectangle *pRacket, Direction pDir)
@@ -85,15 +107,16 @@ void MoveRacket(Rectangle *pRacket, Direction pDir)
     pRacket->y += step;
 }
 
-
+// Serve ball after scoring.
+// -------------------------
 void ServeBall(Rectangle *pBall)
 {
     pBall->x = border.width/2;
     pBall->y = GetRandomValue(border.y + 10, border.height);
 }
-// ----------------------------
+
 // Draw court limits and half.
-// ----------------------------
+// ---------------------------
 void DrawCourt()
 {
     DrawRectangle(screen.x, screen.y, screen.width, screen.height, GRAY);
@@ -101,7 +124,6 @@ void DrawCourt()
     DrawRectangle((screen.width/2) - 5, border.y, CALIBER, border.height, GRAY);
 }
 
-// --------------------
 // Just paint the ball.
 // --------------------
 void DrawBall(Rectangle *pBall)
@@ -109,49 +131,26 @@ void DrawBall(Rectangle *pBall)
     DrawRectangle(pBall->x, pBall->y, pBall->width, pBall->height, WHITE);
 }
 
-// -------------
 // Draw racket.
-// -------------
+// ------------
 void DrawRacket(Rectangle *pRacket)
 {
     DrawRectangle(pRacket->x, pRacket->y, pRacket->width, pRacket->height, WHITE);
 }
 
-// -----------
 // Draw score.
 // -----------
 void DrawScore()
 {
-    int ancho = MeasureText("00", 60);
-    DrawText(FormatText("%02d", rightScore), (screen.width/2) - 50 - ancho, 50, 60, GRAY);
+    DrawText(FormatText("%02d", rightScore), (screen.width/2) - 50 - scoreWidth, 50, 60, GRAY);
     DrawText(FormatText("%02d", leftScore), (screen.width/2) + 50, 50, 60, GRAY);
 }
 
-
-// -----------
 // Start game.
 // -----------
 int main(void)
 {
-    InitWindow(0, 0, "Pong");
-    HideWindow(); // To avoid see window moving.
-
-    // Calculate size, position and inner limits of window.
-    screen = (Rectangle){0, 0, GetMonitorWidth(0)/2, GetMonitorHeight(0)/2};
-    border = (Rectangle){CALIBER, CALIBER, screen.width - (2*CALIBER) , screen.height - (2*CALIBER)};
-    top = (Rectangle) {screen.x, screen.y, border.width, border.y};
-    bottom = (Rectangle) {screen.x, border.height+CALIBER, screen.width, screen.y};
-    SetWindowSize(screen.width, screen.height);
-    SetWindowPosition(screen.width/2, screen.height/2);
-
-    UnhideWindow(); // Now display window in final position.
-    SetTargetFPS(60);
-
-    // Initialize elements.
-    ball = (Rectangle) {5*CALIBER, border.height, CALIBER, CALIBER};
-    leftRacket = (Rectangle) {border.x + CALIBER, border.height/2, CALIBER, 5*CALIBER};
-    rightRacket = (Rectangle) {border.width - CALIBER, border.height/2, CALIBER, 5*CALIBER};
-    setupScore();
+    InitializeElements();
 
     bool WeArePlaying = true;
 
@@ -176,7 +175,7 @@ int main(void)
 
             // Renders.
             BeginDrawing();
-            // No need to clear background, it renders the full court.
+            // No need to clear background, this renders the full court.
             // ClearBackground(BLACK);
             DrawCourt();
             DrawScore();
