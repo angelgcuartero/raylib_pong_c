@@ -16,9 +16,8 @@ typedef enum Direction { UP = 0, DOWN } Direction;
 Rectangle screen, border, top, bottom, ball, leftRacket, rightRacket;
 int rightScore = 0, leftScore = 0, scoreWidth, winner;
 
-// Prototipes.
+// Prototypes.
 void InitializeElements();
-void setupScore();
 void MoveBall();
 void MoveRacket(Rectangle *pRacket, Direction pDir);
 void ServeBall();
@@ -77,7 +76,7 @@ void MoveBall()
         }
     }
 
-    // Move pBall.
+    // Move ball.
     ball.x += xx;
     ball.y += yy;
 }
@@ -152,7 +151,6 @@ int main(void)
 
         // Rendering.
         BeginDrawing();
-        ClearBackground(RAYWHITE);
         switch(currentScreen)
         {
             case TITLE:
@@ -160,7 +158,7 @@ int main(void)
                 ClearBackground(BLACK);
                 DrawText("PONG", 120, 20, 120, GRAY);
                 DrawText("Based on Atari PONG", 120, 140, 60, GRAY);
-                DrawText("Programmed by Angel G. Cuartero", 120, 220, 20, GRAY);
+                DrawText("Programmed with Raylib by Angel G. Cuartero", 120, 220, 20, GRAY);
                 DrawText("Player 1: Q, A", 120, 390, 20, GRAY);
                 DrawText("Player 2: I, J", 120, 420, 20, GRAY);
                 DrawText("Press ENTER to PLAY", 120, 450, 20, GRAY);
