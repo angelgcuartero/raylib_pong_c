@@ -27,17 +27,13 @@ void ServeBall();
 void InitializeElements()
 {
     InitWindow(0, 0, "Pong");
-    HideWindow(); // To avoid see window moving.
-
     // Calculate size, position and inner limits of window.
-    screen = (Rectangle){0, 0, GetMonitorWidth(0)/2, GetMonitorHeight(0)/2};
+    screen = (Rectangle){0, 0, GetScreenWidth()/2, GetScreenHeight()/2};
     border = (Rectangle){CALIBER, CALIBER, screen.width - (2*CALIBER) , screen.height - (2*CALIBER)};
     top = (Rectangle) {screen.x, screen.y, border.width, border.y};
     bottom = (Rectangle) {screen.x, border.height+CALIBER, screen.width, screen.y};
-    SetWindowSize(screen.width, screen.height);
     SetWindowPosition(screen.width/2, screen.height/2);
-
-    UnhideWindow(); // Now display window in final position.
+    SetWindowSize(screen.width, screen.height);
     SetTargetFPS(60);
 
     // Initialize elements.
@@ -59,22 +55,22 @@ void MoveBall()
         (CheckCollisionRecs(ball, rightRacket) && ball.x > rightRacket.x - rightRacket.width))
         xx = -xx;
     else
-        if (ball.y <= border.y || ball.y >= border.height)
+        if (CheckCollisionRecs(ball, top) || CheckCollisionRecs(ball, bottom))
             yy = -yy;
-    else
-    {
-        // Score.
-        if (ball.x <= border.x)
+        else
         {
-            ++rightScore;
-            ServeBall();
+            // Score.
+            if (ball.x < screen.x)
+            {
+                ++rightScore;
+                ServeBall();
+            }
+            else if (ball.x > screen.width)
+            {
+                ++leftScore;
+                ServeBall();
+            }
         }
-        else if (ball.x >= border.width)
-        {
-            ++leftScore;
-            ServeBall();
-        }
-    }
 
     // Move ball.
     ball.x += xx;
@@ -134,9 +130,11 @@ int main(void)
                 else if (IsKeyDown(KEY_J))
                     MoveRacket(&rightRacket, DOWN);
 
-                if ((leftScore == 10) || (rightScore == 10))
+                if ((leftScore >= 11) || (rightScore >= 11))
                 {
-                    winner = (leftScore == 10)? 1 : 2;
+                    if (abs(leftScore - rightScore) < 2)
+                        break;
+                    winner = (leftScore > rightScore)? 1 : 2;
                     rightScore = leftScore = 0; // Reset Score.
                     currentScreen = ENDING;
                 }
