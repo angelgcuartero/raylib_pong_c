@@ -19,8 +19,8 @@ int rightScore = 0, leftScore = 0, scoreWidth, winner;
 
 // Prototypes.
 void InitializeElements(void);
-void MoveBall(void);
 void ServeBall(void);
+void MoveBall(void);
 void MoveRacket(Rectangle *pRacket, Direction pDir);
 
 // Initialize window and primary game elements.
