@@ -18,9 +18,6 @@ This is a pet project and I did it to get in touch with Raylib. I found awesome 
 
 - It seems that there are **discrepancies** between the documentation in the [wiki](https://github.com/raysan5/raylib/wiki) and what you find trying to build a project. There is a prepackaged version for Windows, which it is great, but you still have to make changes in paths, etc., and binaries are not generated where documentation states. You have to create some folders.
 - I had almost no problems configuring and running my project in Linux but in Windows (same machine) it runs at 2fps instead of 60fps, and I don't know why.
-- It took me a while to get it running in macOS. At first, it was a problem of installing the library with `brew`. This version (`2.0.0`) is not the last version (`2.4-dev`) that was in the repository when I cloned it in Linux[^1].
+- It took me a while to get it running in macOS. At first, it was a problem of installing the library with `brew`. This version (`2.0.0`) is not the last version (`2.4-dev`) that was in the repository when I cloned it in Linux. I guess I used some future functions that didn't appear in version `2.0.0`.
 - I found it **difficult to configure XCode** to produce a static application that I could distribute to my friends. I gave up. It compiles dinamically and runs, yes, but I am a bit inept and I couldn't build a complete macOS app.
-- I also gave up trying to build the **HMTL5** version of the program. I installed nodejs and all the other auxiliary elements. I even managed to create `libraylib.bc`, but no way to finish a complete build[^2]. 
-
- [^1]: I guess I used some future functions that didn't appear in version `2.0.0`.
-[^2]: `Makefile` seems to be configured only for Windows for building HTML5.
+- I also gave up trying to build the **HMTL5** version of the program. I installed nodejs and all the other auxiliary elements. I even managed to create `libraylib.bc`, but no way to finish a complete build. `Makefile` seems to be configured only for Windows for building HTML5.
